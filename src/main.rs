@@ -2,22 +2,7 @@
 #[allow(non_snake_case)]
 #[allow(dead_code)]
 struct CPU {
-    V0: u8,
-    V1: u8,
-    V2: u8,
-    V3: u8,
-    V4: u8,
-    V5: u8,
-    V6: u8,
-    V7: u8,
-    V8: u8,
-    V9: u8,
-    VA: u8,
-    VB: u8,
-    VC: u8,
-    VD: u8,
-    VE: u8,
-    VF: u8, // Doubles as flag for some instructions
+    regs: [u8; 16],
     I: u16, // Address register
     PC: u16 // Program counter
 }
@@ -26,22 +11,7 @@ struct CPU {
 #[allow(non_snake_case)]
 fn init_cpu() -> CPU {
     let cpu = CPU {
-        V0: 0,
-        V1: 0,
-        V2: 0,
-        V3: 0,
-        V4: 0,
-        V5: 0,
-        V6: 0,
-        V7: 0,
-        V8: 0,
-        V9: 0,
-        VA: 0,
-        VB: 0,
-        VC: 0,
-        VD: 0,
-        VE: 0,
-        VF: 0,
+        regs: [0; 16],
         I: 0,
         PC: 0
     };
@@ -49,7 +19,31 @@ fn init_cpu() -> CPU {
     return cpu;
 }
 
-fn handle_opcode(opcode: u16) {
+fn set_reg_const(opcode: u16, cpu: &mut CPU) {
+    let reg = ((opcode & 0x0F00) >> 8) as usize;
+    let val = (opcode & 0x00FF) as u8;
+    cpu.regs[reg] = val;
+    println!("\nCPU register {} set to {}!\n", reg, cpu.regs[reg]);
+}
+
+fn set_reg_reg(opcode: u16, cpu: &mut CPU) {
+    let reg1 = ((opcode & 0x0F00) >> 8) as usize;
+    let reg2 = ((opcode & 0x00F0) >> 4) as usize;
+    cpu.regs[reg1] = cpu.regs[reg2];
+    println!("\nreg1: {}, reg2: {} \n", cpu.regs[reg1], cpu.regs[reg2]);
+}
+
+fn add_const_to_reg(opcode: u16, cpu: &mut CPU) {
+    let reg = ((opcode & 0x0F00) >> 8) as usize;
+    let val = (opcode & 0x00FF) as u8;
+    cpu.regs[reg] += val;
+    println!("\nCPU register {} set to {}!\n", reg, cpu.regs[reg]);
+
+}
+
+
+
+fn handle_opcode(opcode: u16, cpu: &mut CPU) {
     match opcode {
         0x00E0 => println!("'Display clear' not implemented!"),
         0x00EE => println!("'return' not implemented!"),
@@ -77,9 +71,9 @@ fn handle_opcode(opcode: u16) {
         op if 0xF00F & op == 0x8003 => println!("'bitwise xor' not implemented!"),
         op if 0xF00F & op == 0x8002 => println!("'bitwise and' not implemented!"),
         op if 0xF00F & op == 0x8001 => println!("'bitwise or' not implemented!"),
-        op if 0xF00F & op == 0x8000 => println!("'set reg to reg' not implemented!"),
-        op if 0xF000 & op == 0x7000 => println!("'add const to reg' not implemented!"),
-        op if 0xF000 & op == 0x6000 => println!("'set reg to const' not implemented!"),
+        op if 0xF00F & op == 0x8000 => set_reg_reg(op, cpu),
+        op if 0xF000 & op == 0x7000 => add_const_to_reg(op, cpu),
+        op if 0xF000 & op == 0x6000 => set_reg_const(op, cpu),
         op if 0xF00F & op == 0x5000 => println!("'jeq reg' not implemented!"),
         op if 0xF000 & op == 0x4000 => println!("'jeq const' not implemented!"),
         op if 0xF000 & op == 0x3000 => println!("'jneq const' not implemented!"),
@@ -92,53 +86,90 @@ fn handle_opcode(opcode: u16) {
 }
 
 fn main() {
-    let cpu = init_cpu();
+    let mut cpu = init_cpu();
     let memory: [u8; 4096] = [0; 4096];
     println!("Memory initiated");
-    handle_opcode(0x00E0);
-    handle_opcode(0x00EE);
-    handle_opcode(0x204E);
-    handle_opcode(0x314E);
-    handle_opcode(0x43AE);
-    handle_opcode(0x53B0);
-    handle_opcode(0x63B2);
-    handle_opcode(0x7FB2);
-    handle_opcode(0x8AB0);
-    handle_opcode(0x8281);
-    handle_opcode(0x8F12);
-    handle_opcode(0x8E43);
-    handle_opcode(0x8E44);
-    handle_opcode(0x8E45);
-    handle_opcode(0x8E46);
-    handle_opcode(0x8E47);
-    handle_opcode(0x8E4E);
-    handle_opcode(0x9E40);
-    handle_opcode(0xAE40);
-    handle_opcode(0xBE40);
-    handle_opcode(0xCE40);
-    handle_opcode(0xDE40);
-    handle_opcode(0xEA9E);
-    handle_opcode(0xEBA1);
-    handle_opcode(0xFB07);
-    handle_opcode(0xFB0A);
-    handle_opcode(0xFB15);
-    handle_opcode(0xFB18);
-    handle_opcode(0xFB1E);
-    handle_opcode(0xFB29);
-    handle_opcode(0xFB33);
-    handle_opcode(0xFB55);
-    handle_opcode(0xFB65);
+    handle_opcode(0xFFFF, &mut cpu);
+    // handle_opcode(0x00E0, &mut cpu);
+    // handle_opcode(0x00EE, &mut cpu);
+    // handle_opcode(0x204E, &mut cpu);
+    // handle_opcode(0x314E, &mut cpu);
+    // handle_opcode(0x43AE, &mut cpu);
+    // handle_opcode(0x53B0, &mut cpu);
+    // handle_opcode(0x63B2, &mut cpu);
+    // handle_opcode(0x7FB2, &mut cpu);
+    // handle_opcode(0x8AB0, &mut cpu);
+    // handle_opcode(0x8281, &mut cpu);
+    // handle_opcode(0x8F12, &mut cpu);
+    // handle_opcode(0x8E43, &mut cpu);
+    // handle_opcode(0x8E44, &mut cpu);
+    // handle_opcode(0x8E45, &mut cpu);
+    // handle_opcode(0x8E46, &mut cpu);
+    // handle_opcode(0x8E47, &mut cpu);
+    // handle_opcode(0x8E4E, &mut cpu);
+    // handle_opcode(0x9E40, &mut cpu);
+    // handle_opcode(0xAE40, &mut cpu);
+    // handle_opcode(0xBE40, &mut cpu);
+    // handle_opcode(0xCE40, &mut cpu);
+    // handle_opcode(0xDE40, &mut cpu);
+    // handle_opcode(0xEA9E, &mut cpu);
+    // handle_opcode(0xEBA1, &mut cpu);
+    // handle_opcode(0xFB07, &mut cpu);
+    // handle_opcode(0xFB0A, &mut cpu);
+    // handle_opcode(0xFB15, &mut cpu);
+    // handle_opcode(0xFB18, &mut cpu);
+    // handle_opcode(0xFB1E, &mut cpu);
+    // handle_opcode(0xFB29, &mut cpu);
+    // handle_opcode(0xFB33, &mut cpu);
+    // handle_opcode(0xFB55, &mut cpu);
+    // handle_opcode(0xFB65, &mut cpu);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    // #[test]
+    // fn test_machine_code_routine_opcode() {
+    //     handle_opcode(0x0132);
+    // }
+    // #[test]
+    // fn test_jump_opcode() {
+    //     handle_opcode(0x10EE);
+    // }
     #[test]
-    fn test_machine_code_routine_opcode() {
-        handle_opcode(0x0132);
+    fn test_reg_set_const() {
+        let mut cpu = init_cpu();
+        handle_opcode(0x63B2, &mut cpu);
+        assert_eq!(cpu.regs[0x3], 0xB2);
+
+        handle_opcode(0x6F02, &mut cpu);
+        assert_eq!(cpu.regs[0xF], 0x2);
+
+        handle_opcode(0x6010, &mut cpu);
+        assert_eq!(cpu.regs[0x0], 0x10);
     }
+
     #[test]
-    fn test_jump_opcode() {
-        handle_opcode(0x10EE);
+    fn test_reg_set_reg() {
+        let mut cpu = init_cpu();
+        handle_opcode(0x69F2, &mut cpu);
+
+        // Should set reg VA to the same as V9
+        handle_opcode(0x8A90, &mut cpu);
+        assert_eq!(cpu.regs[0xA], 0xF2);
+
+        // Should change back to 0
+        handle_opcode(0x8AF0, &mut cpu);
+        assert_eq!(cpu.regs[0xA], 0x0);
+    }
+
+    #[test]
+    fn test_reg_add_const() {
+        let mut cpu = init_cpu();
+        handle_opcode(0x7102, &mut cpu);
+        assert_eq!(cpu.regs[0x1], 0x2);
+
+        handle_opcode(0x7110, &mut cpu);
+        assert_eq!(cpu.regs[0x1], 0x12);
     }
 }
