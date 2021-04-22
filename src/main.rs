@@ -73,29 +73,34 @@ fn bitwise_xor(opcode: u16, cpu: &mut CPU) {
 }
 
 fn right_shift(opcode: u16, cpu: &mut CPU) {
-    let reg1 = ((opcode & 0x0F00) >> 8) as usize;
-    let val = cpu.regs[reg1];
+    let reg = ((opcode & 0x0F00) >> 8) as usize;
+    let val = cpu.regs[reg];
 
     // Save least sigfig of register before shifting
     cpu.regs[0xF] = val & 0x1;
 
-    cpu.regs[reg1] = val >> 1;
+    cpu.regs[reg] = val >> 1;
 }
 
 fn left_shift(opcode: u16, cpu: &mut CPU) {
-    let reg1 = ((opcode & 0x0F00) >> 8) as usize;
-    let val = cpu.regs[reg1];
+    let reg = ((opcode & 0x0F00) >> 8) as usize;
+    let val = cpu.regs[reg];
 
     // Save most sigfig of register before shifting
     cpu.regs[0xF] = (val & 0x80) >> 7;
 
-    cpu.regs[reg1] = val << 1;
+    cpu.regs[reg] = val << 1;
 }
 
-fn set_address_register(opcode: u16, cpu: &mut CPU) {
+fn set_address_register_const(opcode: u16, cpu: &mut CPU) {
     let addr = opcode & 0x0FFF;
 
     cpu.I = addr;
+}
+    
+fn add_reg_address_register(opcode: u16, cpu: &mut CPU) {
+    let reg = ((opcode & 0x0F00) >> 8) as usize;
+    cpu.I += (cpu.regs[reg] as u16);
 }
 
 fn set_sound_timer(opcode: u16, cpu: &mut CPU) {
@@ -119,7 +124,7 @@ fn handle_opcode(opcode: u16, cpu: &mut CPU) {
         op if 0xF0FF & op == 0xF055 => println!("'reg_dump' not implemented!"),
         op if 0xF0FF & op == 0xF033 => println!("'store binary-coded decimal' not implemented!"),
         op if 0xF0FF & op == 0xF029 => println!("'set I to loc of sprite' not implemented!"),
-        op if 0xF0FF & op == 0xF01E => println!("'set I to reg' not implemented!"),
+        op if 0xF0FF & op == 0xF01E => add_reg_address_register(op, cpu),
         op if 0xF0FF & op == 0xF018 => set_sound_timer(op, cpu),
         op if 0xF0FF & op == 0xF015 => set_delay_timer(op, cpu),
         op if 0xF0FF & op == 0xF00A => println!("'wait keypress' not implemented!"),
@@ -129,7 +134,7 @@ fn handle_opcode(opcode: u16, cpu: &mut CPU) {
         op if 0xF000 & op == 0xD000 => println!("'draw' not implemented!"),
         op if 0xF000 & op == 0xC000 => println!("'set reg to bitwise AND with rand' not implemented!"),
         op if 0xF000 & op == 0xB000 => println!("'jump addr reg plus const' not implemented!"),
-        op if 0xF000 & op == 0xA000 => set_address_register(op, cpu),
+        op if 0xF000 & op == 0xA000 => set_address_register_const(op, cpu),
         op if 0xF000 & op == 0x9000 => println!("'jneq reg' not implemented!"),
         op if 0xF00F & op == 0x800E => left_shift(op, cpu),
         op if 0xF00F & op == 0x8007 => println!("'set reg1 to reg2 minus reg1' not implemented!"),
@@ -366,6 +371,22 @@ mod tests {
     }
 
     #[test]
+    fn test_add_reg_to_address_register() {
+        let mut cpu = init_cpu();
+
+        // Set address register to 1100 000 0001
+        handle_opcode(0xAC01, &mut cpu);
+
+        // Set V1 to 0101 0101
+        handle_opcode(0x6155, &mut cpu);
+
+        // Do add operation
+        handle_opcode(0xF11E, &mut cpu);
+
+        assert_eq!(cpu.I, 0xC56);
+    }
+
+    #[test]
     fn test_set_sound_timer() {
         let mut cpu = init_cpu();
 
@@ -388,4 +409,6 @@ mod tests {
 
         assert_eq!(cpu.delay_timer, 0x34);
     }
+
+
 }
