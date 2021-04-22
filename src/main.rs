@@ -1,3 +1,4 @@
+use rand::Rng;
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
@@ -100,7 +101,7 @@ fn set_address_register_const(opcode: u16, cpu: &mut CPU) {
     
 fn add_reg_address_register(opcode: u16, cpu: &mut CPU) {
     let reg = ((opcode & 0x0F00) >> 8) as usize;
-    cpu.I += (cpu.regs[reg] as u16);
+    cpu.I += cpu.regs[reg] as u16;
 }
 
 fn set_sound_timer(opcode: u16, cpu: &mut CPU) {
@@ -113,6 +114,16 @@ fn set_delay_timer(opcode: u16, cpu: &mut CPU) {
     let reg = ((opcode & 0x0F00) >> 8) as usize;
     
     cpu.delay_timer = cpu.regs[reg]
+}
+
+fn set_reg_and_rand_const(opcode: u16, cpu: &mut CPU) {
+    let reg = ((opcode & 0x0F00) >> 8) as usize;
+    let constant = (opcode & 0x00FF) as u8;
+
+    let mut rng = rand::thread_rng();
+    let rand_num = rng.gen_range(0..=255);
+
+    cpu.regs[reg] = constant & rand_num;
 }
 
 
@@ -132,7 +143,7 @@ fn handle_opcode(opcode: u16, cpu: &mut CPU) {
         op if 0xF0FF & op == 0xE0A1 => println!("'not keypress' not implemented!"),
         op if 0xF0FF & op == 0xE09E => println!("'keypress' not implemented!"),
         op if 0xF000 & op == 0xD000 => println!("'draw' not implemented!"),
-        op if 0xF000 & op == 0xC000 => println!("'set reg to bitwise AND with rand' not implemented!"),
+        op if 0xF000 & op == 0xC000 => set_reg_and_rand_const(op, cpu),
         op if 0xF000 & op == 0xB000 => println!("'jump addr reg plus const' not implemented!"),
         op if 0xF000 & op == 0xA000 => set_address_register_const(op, cpu),
         op if 0xF000 & op == 0x9000 => println!("'jneq reg' not implemented!"),
