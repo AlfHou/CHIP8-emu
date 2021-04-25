@@ -1,4 +1,9 @@
+use std::io::prelude::*;
 use rand::Rng;
+use std::env;
+use std::process;
+use std::io::BufReader;
+use std::fs::File;
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
@@ -28,6 +33,7 @@ fn init_cpu() -> CPU {
 fn set_reg_const(opcode: u16, cpu: &mut CPU) {
     let reg = ((opcode & 0x0F00) >> 8) as usize;
     let val = (opcode & 0x00FF) as u8;
+    println!("Setting register {:#02x} to value {:#02x}", reg, val);
     cpu.regs[reg] = val;
 }
 
@@ -127,86 +133,203 @@ fn set_reg_and_rand_const(opcode: u16, cpu: &mut CPU) {
 }
 
 
-fn handle_opcode(opcode: u16, cpu: &mut CPU) {
+fn handle_opcode(opcode: u16, cpu: &mut CPU) -> Result<(), &str> {
+
+    println!("Handling opcode: {:#04x}", opcode);
     match opcode {
-        0x00E0 => println!("'Display clear' not implemented!"),
-        0x00EE => println!("'return' not implemented!"),
-        op if 0xF0FF & op == 0xF065 => println!("'reg_load' not implemented!"),
-        op if 0xF0FF & op == 0xF055 => println!("'reg_dump' not implemented!"),
-        op if 0xF0FF & op == 0xF033 => println!("'store binary-coded decimal' not implemented!"),
-        op if 0xF0FF & op == 0xF029 => println!("'set I to loc of sprite' not implemented!"),
-        op if 0xF0FF & op == 0xF01E => add_reg_address_register(op, cpu),
-        op if 0xF0FF & op == 0xF018 => set_sound_timer(op, cpu),
-        op if 0xF0FF & op == 0xF015 => set_delay_timer(op, cpu),
-        op if 0xF0FF & op == 0xF00A => println!("'wait keypress' not implemented!"),
-        op if 0xF0FF & op == 0xF007 => println!("'set reg d_timer' not implemented!"),
-        op if 0xF0FF & op == 0xE0A1 => println!("'not keypress' not implemented!"),
-        op if 0xF0FF & op == 0xE09E => println!("'keypress' not implemented!"),
-        op if 0xF000 & op == 0xD000 => println!("'draw' not implemented!"),
-        op if 0xF000 & op == 0xC000 => set_reg_and_rand_const(op, cpu),
-        op if 0xF000 & op == 0xB000 => println!("'jump addr reg plus const' not implemented!"),
-        op if 0xF000 & op == 0xA000 => set_address_register_const(op, cpu),
-        op if 0xF000 & op == 0x9000 => println!("'jneq reg' not implemented!"),
-        op if 0xF00F & op == 0x800E => left_shift(op, cpu),
-        op if 0xF00F & op == 0x8007 => println!("'set reg1 to reg2 minus reg1' not implemented!"),
-        op if 0xF00F & op == 0x8006 => right_shift(op, cpu),
-        op if 0xF00F & op == 0x8005 => println!("'subtract reg from reg' not implemented!"),
-        op if 0xF00F & op == 0x8004 => println!("'add reg to reg' not implemented!"),
-        op if 0xF00F & op == 0x8003 => bitwise_xor(op, cpu),
-        op if 0xF00F & op == 0x8002 => bitwise_and(op, cpu),
-        op if 0xF00F & op == 0x8001 => bitwise_or(op, cpu),
-        op if 0xF00F & op == 0x8000 => set_reg_reg(op, cpu),
-        op if 0xF000 & op == 0x7000 => add_const_to_reg(op, cpu),
-        op if 0xF000 & op == 0x6000 => set_reg_const(op, cpu),
-        op if 0xF00F & op == 0x5000 => println!("'jeq reg' not implemented!"),
-        op if 0xF000 & op == 0x4000 => println!("'jeq const' not implemented!"),
-        op if 0xF000 & op == 0x3000 => println!("'jneq const' not implemented!"),
-        op if 0xF000 & op == 0x2000 => println!("'call at addr' not implemented!"),
-        op if 0xF000 & op == 0x1000 => println!("'jump' not implemented!"),
-        op if 0xF000 & op == 0x0000 => println!("'machine code routine' not implemented!"),
-        _ => println!("Opcode not recognized")
+        0x00E0 => { 
+            println!("'Display clear' not implemented!");
+            return Err("Not Implemented");
+        },
+        0x00EE => {
+            println!("'return' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xF065 => {
+            println!("'reg_load' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xF055 => {
+            println!("'reg_dump' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xF033 => {
+            println!("'store binary-coded decimal' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xF029 => {
+            println!("'set I to loc of sprite' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xF01E => { 
+            add_reg_address_register(op, cpu);
+            return Ok(());
+        }
+        op if 0xF0FF & op == 0xF018 => {
+            set_sound_timer(op, cpu);
+            return Ok(());
+        }
+        op if 0xF0FF & op == 0xF015 => {
+            set_delay_timer(op, cpu);
+            return Ok(());
+        }
+        op if 0xF0FF & op == 0xF00A => {
+            println!("'wait keypress' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xF007 => {
+            println!("'set reg d_timer' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF0FF & op == 0xE0A1 => {
+            println!("'not keypress' not implemented!");
+            return Err("Not implemented");
+
+        }
+        op if 0xF0FF & op == 0xE09E => {
+            println!("'keypress' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0xD000 => {
+            println!("'draw' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0xC000 => {
+            set_reg_and_rand_const(op, cpu);
+            return Ok(());
+        }
+        op if 0xF000 & op == 0xB000 => {
+            println!("'jump addr reg plus const' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0xA000 => {
+            set_address_register_const(op, cpu);
+            return Ok(());
+        }
+        op if 0xF000 & op == 0x9000 => {
+            println!("'jneq reg' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF00F & op == 0x800E => {
+            left_shift(op, cpu);
+            return Ok(());
+        }
+        op if 0xF00F & op == 0x8007 => {
+            println!("'set reg1 to reg2 minus reg1' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF00F & op == 0x8006 => {
+            right_shift(op, cpu);
+            return Ok(());
+        }
+        op if 0xF00F & op == 0x8005 => {
+            println!("'subtract reg from reg' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF00F & op == 0x8004 => {
+            println!("'add reg to reg' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF00F & op == 0x8003 => {
+            bitwise_xor(op, cpu);
+            return Ok(());
+        }
+        op if 0xF00F & op == 0x8002 => {
+            bitwise_and(op, cpu);
+            return Ok(());
+        }
+        op if 0xF00F & op == 0x8001 => {
+            bitwise_or(op, cpu);
+            return Ok(());
+        }
+        op if 0xF00F & op == 0x8000 => {
+            set_reg_reg(op, cpu);
+            return Ok(());
+        }
+        op if 0xF000 & op == 0x7000 => {
+            add_const_to_reg(op, cpu);
+            return Ok(());
+        }
+        op if 0xF000 & op == 0x6000 => {
+            set_reg_const(op, cpu);
+            return Ok(());
+        }
+        op if 0xF00F & op == 0x5000 => {
+            println!("'jeq reg' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0x4000 => {
+            println!("'jeq const' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0x3000 => {
+            println!("'jneq const' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0x2000 => {
+            println!("'call at addr' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0x1000 => {
+            println!("'jump' not implemented!");
+            return Err("Not implemented");
+        }
+        op if 0xF000 & op == 0x0000 => {
+            println!("'machine code routine' not implemented!");
+            return Err("Not implemented");
+        }
+        _ => {
+            println!("Opcode not recognized");
+            return Err("Not implemented");
+        }
     }
 
 }
+fn load_rom(rom_path: String, memory: &mut [u8]) -> std::io::Result<()> {
+    println!("Rom path: {}!", rom_path);
+    let f = File::open(rom_path)?;
+    let mut reader = BufReader::new(f);
 
-fn main() {
+    reader.read(&mut memory[0x200 .. 0x1000])?;
+    Ok(())
+}
+
+fn main() -> std::io::Result<()> {
     let mut cpu = init_cpu();
-    let memory: [u8; 4096] = [0; 4096];
+    let mut memory: [u8; 4096] = [0; 4096];
     println!("Memory initiated");
-    handle_opcode(0xFFFF, &mut cpu);
-    // handle_opcode(0x00E0, &mut cpu);
-    // handle_opcode(0x00EE, &mut cpu);
-    // handle_opcode(0x204E, &mut cpu);
-    // handle_opcode(0x314E, &mut cpu);
-    // handle_opcode(0x43AE, &mut cpu);
-    // handle_opcode(0x53B0, &mut cpu);
-    // handle_opcode(0x63B2, &mut cpu);
-    // handle_opcode(0x7FB2, &mut cpu);
-    // handle_opcode(0x8AB0, &mut cpu);
-    // handle_opcode(0x8281, &mut cpu);
-    // handle_opcode(0x8F12, &mut cpu);
-    // handle_opcode(0x8E43, &mut cpu);
-    // handle_opcode(0x8E44, &mut cpu);
-    // handle_opcode(0x8E45, &mut cpu);
-    // handle_opcode(0x8E46, &mut cpu);
-    // handle_opcode(0x8E47, &mut cpu);
-    // handle_opcode(0x8E4E, &mut cpu);
-    // handle_opcode(0x9E40, &mut cpu);
-    // handle_opcode(0xAE40, &mut cpu);
-    // handle_opcode(0xBE40, &mut cpu);
-    // handle_opcode(0xCE40, &mut cpu);
-    // handle_opcode(0xDE40, &mut cpu);
-    // handle_opcode(0xEA9E, &mut cpu);
-    // handle_opcode(0xEBA1, &mut cpu);
-    // handle_opcode(0xFB07, &mut cpu);
-    // handle_opcode(0xFB0A, &mut cpu);
-    // handle_opcode(0xFB15, &mut cpu);
-    // handle_opcode(0xFB18, &mut cpu);
-    // handle_opcode(0xFB1E, &mut cpu);
-    // handle_opcode(0xFB29, &mut cpu);
-    // handle_opcode(0xFB33, &mut cpu);
-    // handle_opcode(0xFB55, &mut cpu);
-    // handle_opcode(0xFB65, &mut cpu);
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        println!("Usage: cargo run <rom_path>");
+        process::exit(1);
+    }
+    let rom_path = &args[1];
+
+    load_rom(rom_path.to_string(), &mut memory)?;
+
+    // Set program counter to start of ROM
+    cpu.PC = 0x200;
+
+
+    while true {
+        let opcode = ((memory[cpu.PC as usize] as u16) << 8)
+            + memory[cpu.PC as usize + 1] as u16;
+        println!("opcode: {:#04x}", opcode);
+        cpu.PC += 8;
+        println!("cpu.PC: {:#04x}", cpu.PC);
+
+        let res = handle_opcode(opcode, &mut cpu);
+        if res.is_err() {
+            println!("Error handling opcode");
+            panic!("Error handling opcode");
+        }
+        if (cpu.PC > 0x220) {
+            break;
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
